@@ -1,13 +1,4 @@
-## adapted from jagam
-
-## (c) Simon Wood 2014. Released under GPL2. 
-## jagam code (Just Another Gibbs Additive Model)
-## Code offering JAGS/BUGS support for mgcv.
-## In particular autogenerates the code and data to fit an mgcv
-## style GAM in JAGS, and re-packages the simulation output
-## in a form suitable for plotting and prediction. 
-## Idea is that the code would be modified to add the sort
-## of random effects structure most appropriately handled in JAGS.
+## adapted from jagam which is (c) Simon Wood 2014. Released under GPL2. 
 
 
 TMBam <- function(formula, family=gaussian, data=list(), file, weights=NULL,
@@ -48,10 +39,13 @@ Type objective_function<Type>::operator() ()
   if (is.null(family$family))
             stop("family not recognized")
 
+  resp <- all.vars(update(formula, . ~ 1))
+  lp_stuff <- tmbam.lp(resp, family, use.weights=FALSE, offset=FALSE)
+
   gp <- interpret.gam(formula) # interpret the formula 
   cl <- match.call() # call needed in gam object for update to work
   mf <- match.call(expand.dots=FALSE)
-  mf$formula <- gp$fake.formula 
+  mf$formula <- gp$fake.formula
   mf$family <- mf$knots <- mf$sp <- mf$file <- mf$control <- 
   mf$centred <- mf$sp.prior <- mf$diagonalize <- NULL
   mf$drop.unused.levels <- drop.unused.levels
@@ -231,8 +225,8 @@ pars_def <- paste0(pars_def, "  PARAMETER_VECTOR(beta);\n")
   }
   # scale
   #sp_scale_defs <- paste0(sp_scale_defs, "  Type phi = exp(log_phi);\n")
-  pars_def <- paste0(pars_def, "  PARAMETER(log_sigma);\n")
-  sp_scale_defs <- paste0(sp_scale_defs, "  Type sigma = exp(log_sigma);\n")
+  pars_def <- paste0(pars_def, lp_stuff$hyperpars_pars)
+  sp_scale_defs <- paste0(sp_scale_defs, lp_stuff$hyperpars, "\n")
 
 jags.ini$log_sigma <- 1
 
@@ -315,12 +309,17 @@ jags.ini$log_lambda <- log(lambda)
   cppcat("  // linear predictor\n")
   link_start <- ""
   link_end <- ""
-  cppcat("  vector<Type> eta = ", link_start, "mu + X*beta", link_end,";\n")
+  #cppcat("  vector<Type> eta = ", link_start, "mu + X*beta", link_end,";\n")
+## call lp here
+#TODO: fix weights for the binomial case
+  cppcat(lp_stuff$lp)
+  cppcat("\n")
+  cppcat(lp_stuff$ll)
 
   # calculate neg loglik
-response_spec <- "dnorm(y(i), eta(i), sigma)"
-  cppcat("  for(int i=0; i<y.size(); i++)\n")
-  cppcat("    nll -= ", response_spec, ";\n")
+#response_spec <- "dnorm(y(i), eta(i), sigma)"
+#  cppcat("  for(int i=0; i<y.size(); i++)\n")
+#  cppcat("    nll -= ", response_spec, ";\n")
 
 #dtweedie(y(i), eta(i), phi, p, true);
 
