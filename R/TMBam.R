@@ -296,9 +296,9 @@ jags.ini$log_lambda <- log(lambda)
   cppcat("  // calculate REML penalty\n")
 
   K_count <- K_count - 1
-  cppcat("  nll -= 0.5*(")
+  cppcat("  nll = -0.5*(")
   cppcat(paste0("logdet(K",1:K_count,")", collapse=" + "))
-  cppcat(") -\n")
+  cppcat(") +\n")
   cppcat("    0.5*(")
   cppcat(paste0("(beta",1:K_count, "* vector<Type>(K", 1:K_count,
                 "*beta", 1:K_count, ")).sum()",
