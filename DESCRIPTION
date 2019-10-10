@@ -1,14 +1,14 @@
 Package: mgcvminusminus
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Fit mgcv models using Template Model Builder
+Version: 0.0.1
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "David L",
+           family = "Miller",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: MIT + file LICENSE
+           email = "dave@ninepointeighton.net",
+           comment = c(ORCID = "0000-0002-9640-6755"))
+Description: Automatically build templates from mgcv models.
+License: GPL (>=2)
 Encoding: UTF-8
 LazyData: true
 Imports:
