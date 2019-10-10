@@ -50,6 +50,14 @@ stop("weights not supported")
     ll <- paste0(ll,
                  "      nll -= dbinom(", resp, "(i), w(i), eta(i), true);\n")
     use.weights <- TRUE
+  }else if (family$family=="Tweedie") {
+    hyperpars <- c("  Type phi = exp(log_phi);\n")
+    hyperpars_pars <- paste0("  PARAMETER(log_phi); // log scale\n",
+                             "  PARAMETER(p); // Tweedie power par\n")
+   # scale <- FALSE
+    ll <- paste0(ll,
+                 "      nll -= dtweedie(", resp, "(i), eta(i), phi, p, true);\n")
+    use.weights <- FALSE
   } else if (family$family=="Gamma") {
 stop("no gamma yet!")
 #    if(use.weights){

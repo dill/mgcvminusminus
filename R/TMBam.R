@@ -39,7 +39,8 @@ Type objective_function<Type>::operator() ()
   if (is.null(family$family))
             stop("family not recognized")
 
-  resp <- all.vars(update(formula, . ~ 1))
+  #resp <- all.vars(update(formula, . ~ 1))
+  resp <- "y"
   lp_stuff <- tmbam.lp(resp, family, use.weights=FALSE, offset=FALSE)
 
   gp <- interpret.gam(formula) # interpret the formula 
@@ -86,7 +87,7 @@ Type objective_function<Type>::operator() ()
   ## response....
 
   use.weights <- if (is.null(weights)) FALSE else TRUE
-  use.weights <- mgcv:::write.jagslp("y",family,file,use.weights,!is.null(G$offset))
+#use.weights <- mgcv:::write.jagslp("y",family,file,use.weights,!is.null(G$offset))
   if (is.null(weights)&&use.weights) weights <- rep(1,nrow(G$X))
 
   ## start the JAGS data list...
@@ -278,7 +279,7 @@ jags.ini$log_lambda <- log(lambda)
 ##!##  cat("}",file=file,append=TRUE)
 
   cppcat("  DATA_MATRIX(X); // design matrix\n")
-  cppcat("  DATA_VECTOR(y); // response\n")
+  cppcat(paste0("  DATA_VECTOR(", resp ,"); // response\n"))
   cppcat(pen_mats)
   cppcat("\n")
   cppcat(pars_def)
@@ -307,22 +308,12 @@ jags.ini$log_lambda <- log(lambda)
 
   # calculate linear predictor
   cppcat("  // linear predictor\n")
-  link_start <- ""
-  link_end <- ""
-  #cppcat("  vector<Type> eta = ", link_start, "mu + X*beta", link_end,";\n")
-## call lp here
+
 #TODO: fix weights for the binomial case
   cppcat(lp_stuff$lp)
   cppcat("\n")
+  # calculate likelihood
   cppcat(lp_stuff$ll)
-
-  # calculate neg loglik
-#response_spec <- "dnorm(y(i), eta(i), sigma)"
-#  cppcat("  for(int i=0; i<y.size(); i++)\n")
-#  cppcat("    nll -= ", response_spec, ";\n")
-
-#dtweedie(y(i), eta(i), phi, p, true);
-
 
 
   cppcat("\n")
