@@ -17,7 +17,7 @@ dyn.load(dynlib("thingo"))
 
 
 # build the model
-model <- MakeADFun(data=tmb$jags.data, parameters=tmb$jags.ini,
+model <- MakeADFun(data=tmb$tmb.data, parameters=tmb$tmb.ini,
                    DLL="thingo", random=c("beta"))
 
 # actually do the optimisation
@@ -28,5 +28,11 @@ opt <- nlminb(model$par, model$fn, model$gr, control=list(trace=1))
 rep <- sdreport(model)
 
 
-#bb <- gam(y~s(x0),data=dat, select=TRUE, method="REML")
+
 bb <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),data=dat, select=TRUE, method="REML")
+
+
+# compare
+plot(coef(bb), c(rep$par.fixed[1], rep$par.random), xlab="mgcv", ylab="TMB", asp=1)
+abline(a=0, b=1)
+

@@ -93,28 +93,28 @@ Type objective_function<Type>::operator() ()
   ## start the JAGS data list...
 
   #jags.stuff <- list(y=G$y, n=length(G$y), X=G$X)
-  jags.stuff <- list(y=G$y, X=G$X)
-  if (!is.null(G$offset)) jags.stuff$offset <- G$offset
-  if (use.weights) jags.stuff$w <- weights
+  tmb.stuff <- list(y=G$y, X=G$X)
+  if (!is.null(G$offset)) tmb.stuff$offset <- G$offset
+  if (use.weights) tmb.stuff$w <- weights
 
 ## FIXME: is this right?
-  if (family$family == "binomial") jags.stuff$y <- G$y*weights ## JAGS not expecting observed prob!!
+  if (family$family == "binomial") tmb.stuff$y <- G$y*weights ## JAGS not expecting observed prob!!
 
   ## get initial values, for use by JAGS, and to guess suitable values for
   ## uninformative priors...
   ## initial sp values
   lambda <- mgcv:::initial.spg(G$X, G$y, G$w, family, G$S, G$rank,
                                G$off,offset=G$offset,L=G$L) 
-  jags.ini <- list()
+  tmb.ini <- list()
   lam <- if (is.null(G$L)) lambda else G$L%*%lambda
   jin <- mgcv:::jini(G,lam)
-  jags.ini$b <- jin$beta
+  tmb.ini$b <- jin$beta
 
   # fiddle
-  jags.ini$beta <- jags.ini$b[-(1:G$nsdf)]
-  jags.ini$mu <- jags.ini$b[1:G$nsdf]
-  jags.ini$b <- NULL
-  jags.stuff$X <- jags.stuff$X[, -G$nsdf]
+  tmb.ini$beta <- tmb.ini$b[-(1:G$nsdf)]
+  tmb.ini$mu <- tmb.ini$b[1:G$nsdf]
+  tmb.ini$b <- NULL
+  tmb.stuff$X <- tmb.stuff$X[, -G$nsdf]
 
   prior.tau <- signif(0.01/(abs(jin$beta) + jin$se)^2,2)
 
@@ -188,7 +188,7 @@ stop("blarg Dave didn't sort this yet")
                        "  matrix<Type> ", Kname, " = lambda(", c_sp_counter,
                        ")*", Sname, sep="")
       c_sp_counter <- c_sp_counter + 1
-      jags.stuff[[Sname]] <- G$smooth[[i]]$S[[1]]
+      tmb.stuff[[Sname]] <- G$smooth[[i]]$S[[1]]
 
       if (M>1) { ## code to form total precision matrix...
         for (j in 2:M){
@@ -199,7 +199,7 @@ stop("blarg Dave didn't sort this yet")
                            "+\n                    lambda(", c_sp_counter, ")*",
                            Sname, sep="")
           c_sp_counter <- c_sp_counter + 1
-          jags.stuff[[Sname]] <- G$smooth[[i]]$S[[j]]
+          tmb.stuff[[Sname]] <- G$smooth[[i]]$S[[j]]
         }
       }
       K_defs <- paste0(K_defs, ";\n", sep="")
@@ -207,7 +207,7 @@ stop("blarg Dave didn't sort this yet")
       n.sp <- n.sp + M
 #      Sc <- G$smooth[[i]]$S[[1]]
 #      if (M>1) for (j in 2:M) Sc <- cbind(Sc, G$smooth[[i]]$S[[j]])
-#      jags.stuff[[Sname]] <- Sc
+#      tmb.stuff[[Sname]] <- Sc
     }
   } ## smoothing penalties finished
 
@@ -229,7 +229,7 @@ pars_def <- paste0(pars_def, "  PARAMETER_VECTOR(beta);\n")
   pars_def <- paste0(pars_def, lp_stuff$hyperpars_pars)
   sp_scale_defs <- paste0(sp_scale_defs, lp_stuff$hyperpars, "\n")
 
-jags.ini$log_sigma <- 1
+tmb.ini$log_sigma <- 1
 
 
 # FIXME: does this need to be sorted?
@@ -242,20 +242,20 @@ jags.ini$log_sigma <- 1
 ##!##      cat("    rho[i] ~ dunif(-12,12)\n",file=file,append=TRUE,sep="") 
 ##!##      cat("    lambda[i] <- exp(rho[i])\n",file=file,append=TRUE,sep="")
 ##!##      cat("  }\n",file=file,append=TRUE,sep="")
-##!##      jags.ini$rho <- log(lambda)
-jags.ini$log_lambda <- log(lambda)
+##!##      tmb.ini$rho <- log(lambda)
+tmb.ini$log_lambda <- log(lambda)
 ##!##    } else { ## gamma priors
 ##!##      cat("  for (i in 1:",n.sp,") {\n",file=file,append=TRUE,sep="")
 ##!##      cat("    lambda[i] ~ dgamma(.05,.005)\n",file=file,append=TRUE,sep="") 
 ##!##      cat("    rho[i] <- log(lambda[i])\n",file=file,append=TRUE,sep="")
 ##!##      cat("  }\n",file=file,append=TRUE,sep="")
-##!##      jags.ini$lambda <- lambda
+##!##      tmb.ini$lambda <- lambda
 ##!##    }
 ##!##  } else { 
-##!##    jags.stuff$L <- G$L
+##!##    tmb.stuff$L <- G$L
 ##!##    rho.lo <- FALSE
 ##!##    if (any(G$lsp0!=0)) {
-##!##      jags.stuff$rho.lo <- G$lsp0
+##!##      tmb.stuff$rho.lo <- G$lsp0
 ##!##      rho.lo <- TRUE
 ##!##    }
 ##!##    nr <- ncol(G$L)
@@ -264,7 +264,7 @@ jags.ini$log_lambda <- log(lambda)
 ##!##      if (rho.lo) cat("  rho <- rho.lo + L %*% rho0\n",file=file,append=TRUE,sep="")
 ##!##      else cat("  rho <- L %*% rho0\n",file=file,append=TRUE,sep="")
 ##!##      cat("  for (i in 1:",n.sp,") { lambda[i] <- exp(rho[i]) }\n",file=file,append=TRUE,sep="")
-##!##      jags.ini$rho0 <- log(lambda)
+##!##      tmb.ini$rho0 <- log(lambda)
 ##!##    } else { ## gamma prior
 ##!##      cat("  for (i in 1:",nr,") {\n",file=file,append=TRUE,sep="")
 ##!##      cat("    lambda0[i] ~ dgamma(.05,.005)\n",file=file,append=TRUE,sep="") 
@@ -273,7 +273,7 @@ jags.ini$log_lambda <- log(lambda)
 ##!##      if (rho.lo) cat("  rho <- rho.lo + L %*% rho0\n",file=file,append=TRUE,sep="")
 ##!##      else cat("  rho <- L %*% rho0\n",file=file,append=TRUE,sep="")
 ##!##      cat("  for (i in 1:",n.sp,") { lambda[i] <- exp(rho[i]) }\n",file=file,append=TRUE,sep="")
-##!##      jags.ini$lambda0 <- lambda
+##!##      tmb.ini$lambda0 <- lambda
 ##!##    }
 ##!##  } 
 ##!##  cat("}",file=file,append=TRUE)
@@ -323,6 +323,6 @@ jags.ini$log_lambda <- log(lambda)
 
   G$formula=formula
   G$rank=ncol(G$X) ## to Gibbs sample we force full rank!
-  list(pregam=G,jags.data=jags.stuff,jags.ini=jags.ini)
+  list(pregam=G, tmb.data=tmb.stuff, tmb.ini=tmb.ini)
 } ## jagam
 
