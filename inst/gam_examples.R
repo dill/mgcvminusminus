@@ -29,7 +29,7 @@ rep <- sdreport(model)
 
 
 
-bb <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),data=dat, select=TRUE, method="REML")
+bb <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),data=dat, method="REML")
 
 
 # compare

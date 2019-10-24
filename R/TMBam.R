@@ -78,7 +78,7 @@ Type objective_function<Type>::operator() ()
 
   G <- mgcv:::gam.setup(gp,pterms=pterms,
                  data=mf,knots=knots,sp=sp,
-                 H=NULL,absorb.cons=centred,sparse.cons=FALSE,select=TRUE,
+                 H=NULL,absorb.cons=centred,sparse.cons=FALSE,#select=TRUE,
                  idLinksBases=TRUE,scale.penalty=control$scalePenalty,
                  diagonal.penalty=diagonalize)
   G$model <- mf;G$terms <- terms;G$family <- family;G$call <- cl
