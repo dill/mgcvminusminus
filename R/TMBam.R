@@ -180,15 +180,15 @@ stop("blarg Dave didn't sort this yet")
       Kname <- paste("K",i,sep="") ## total penalty matrix in JAGS
       Sname <- paste("S", c_sp_counter+1 ,sep="") ## components of total penalty in R & JAGS
 
-      pen_mats <- paste0(pen_mats, "  DATA_MATRIX(", Sname, ");\n")
+      pen_mats <- paste0(pen_mats, "  DATA_SPARSE_MATRIX(", Sname, ");\n")
       beta_def <- paste0(beta_def, "  vector<Type> beta", K_count,
                                    " = beta.segment(", b0-G$nsdf-1, ",", p, ");\n")
 
       K_defs <- paste0(K_defs,
-                       "  matrix<Type> ", Kname, " = lambda(", c_sp_counter,
+                       "  Eigen::SparseMatrix<Type> ", Kname, " = lambda(", c_sp_counter,
                        ")*", Sname, sep="")
       c_sp_counter <- c_sp_counter + 1
-      tmb.stuff[[Sname]] <- G$smooth[[i]]$S[[1]]
+      tmb.stuff[[Sname]] <- as(G$smooth[[i]]$S[[1]], "sparseMatrix")
 
       if (M>1) { ## code to form total precision matrix...
         for (j in 2:M){
@@ -199,7 +199,7 @@ stop("blarg Dave didn't sort this yet")
                            "+\n                    lambda(", c_sp_counter, ")*",
                            Sname, sep="")
           c_sp_counter <- c_sp_counter + 1
-          tmb.stuff[[Sname]] <- G$smooth[[i]]$S[[j]]
+          tmb.stuff[[Sname]] <- as(G$smooth[[i]]$S[[j]], "sparseMatrix")
         }
       }
       K_defs <- paste0(K_defs, ";\n", sep="")
@@ -278,6 +278,10 @@ tmb.ini$log_lambda <- log(lambda)
 ##!##  } 
 ##!##  cat("}",file=file,append=TRUE)
 
+  cppcat("  using namespace density;\n")
+  cppcat("  using namespace Eigen;\n")
+  cppcat("  using namespace R_inla;\n")
+  cppcat("\n")
   cppcat("  DATA_MATRIX(X); // design matrix\n")
   cppcat(paste0("  DATA_VECTOR(", resp ,"); // response\n"))
   cppcat(pen_mats)
@@ -297,12 +301,17 @@ tmb.ini$log_lambda <- log(lambda)
   cppcat("  // calculate REML penalty\n")
 
   K_count <- K_count - 1
+
+  # construct the penalty here
+  # lnl -0.5( logdets + penaltymatrixstuff)
   cppcat("  nll = -0.5*(")
-  cppcat(paste0("logdet(K",1:K_count,")", collapse=" + "))
+  # all the log determinants that you want
+  cppcat(paste0("logdet(matrix<Type>(K", 1:K_count, "))", collapse=" + "))
   cppcat(") +\n")
+  # now the penalty matrix bits
   cppcat("    0.5*(")
-  cppcat(paste0("(beta",1:K_count, "* vector<Type>(K", 1:K_count,
-                "*beta", 1:K_count, ")).sum()",
+  cppcat(paste0("GMRF(K", 1:K_count, ").Quadform(",
+                "beta", 1:K_count, ")",
                 collapse=" + "))
   cppcat(");\n\n")
 
