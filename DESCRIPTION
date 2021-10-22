@@ -5,7 +5,7 @@ Authors@R:
     person(given = "David L",
            family = "Miller",
            role = c("aut", "cre"),
-           email = "dave@ninepointeighton.net",
+           email = "dave@ninepointeightone.net",
            comment = c(ORCID = "0000-0002-9640-6755"))
 Description: Automatically build templates from mgcv models.
 License: GPL (>=2)
