@@ -215,15 +215,9 @@ stop("blarg Dave didn't sort this yet")
 pars_def <- paste0(pars_def, "  PARAMETER_VECTOR(beta);\n")
 
   sp_scale_defs <- "  // transform smoopars and scale\n"
-  if(n.sp == 1){
-    pars_def <- paste0(pars_def, "  PARAMETER(log_lambda); // smoopar\n")
-    sp_scale_defs <- paste0(sp_scale_defs,
-                            "  Type lambda = exp(log_lambda);\n")
-  }else{
-    pars_def <- paste0(pars_def, "  PARAMETER_VECTOR(log_lambda); // smoopar\n")
-    sp_scale_defs <- paste0(sp_scale_defs,
-                            "  vector<Type> lambda = exp(log_lambda);\n")
-  }
+  pars_def <- paste0(pars_def, "  PARAMETER_VECTOR(log_lambda); // smoopar\n")
+  sp_scale_defs <- paste0(sp_scale_defs,
+                          "  vector<Type> lambda = exp(log_lambda);\n")
   # scale
   #sp_scale_defs <- paste0(sp_scale_defs, "  Type phi = exp(log_phi);\n")
   pars_def <- paste0(pars_def, lp_stuff$hyperpars_pars)
